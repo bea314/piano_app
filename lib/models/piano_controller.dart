@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../piano_ffi.dart';
+import '../audio/piano_audio.dart';
 
 class PianoState {
   final Set<int> pressedKeys;
