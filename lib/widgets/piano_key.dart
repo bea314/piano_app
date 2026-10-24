@@ -26,9 +26,9 @@ class PianoKey extends StatelessWidget {
       onPointerUp: (_) => onUp(),
       onPointerCancel: (_) => onUp(),
       child: Container(
-        width: isBlack ? 34 : 56,
-        height: isBlack ? 120 : 200,
-        margin: EdgeInsets.symmetric(horizontal: isBlack ? 2 : 1),
+        width: double.infinity,
+        height: double.infinity,
+        margin: EdgeInsets.symmetric(horizontal: isBlack ? 1 : 0.5),
         decoration: BoxDecoration(
           color: active
               ? color.withValues(alpha: isBlack ? 0.8 : 0.5)

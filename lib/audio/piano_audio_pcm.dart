@@ -9,12 +9,22 @@ const _feedSize = 4096;
 
 final PianoSynthesis _synth = PianoSynthesis();
 
-Future<void> pcmPianoInit(int sampleRate) async {
+Future<void> pcmPianoInit(
+  int sampleRate, {
+  bool preferIosPlayback = false,
+}) async {
   _synth.sampleRate = sampleRate;
   _synth.t = 0;
   _synth.activeNotes.clear();
   await FlutterPcmSound.setLogLevel(LogLevel.error);
-  await FlutterPcmSound.setup(sampleRate: sampleRate, channelCount: 1);
+  await FlutterPcmSound.setup(
+    sampleRate: sampleRate,
+    channelCount: 1,
+    iosAudioCategory: preferIosPlayback
+        ? IosAudioCategory.playback
+        : IosAudioCategory.soloAmbient,
+    iosAllowBackgroundAudio: false,
+  );
   await FlutterPcmSound.setFeedThreshold(_feedThreshold);
   FlutterPcmSound.setFeedCallback(_onFeed);
 }
