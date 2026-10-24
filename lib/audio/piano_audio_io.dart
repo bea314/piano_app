@@ -4,9 +4,15 @@ import '../piano_ffi.dart' as ffi;
 import 'piano_audio_common.dart';
 import 'piano_audio_pcm.dart' as pcm;
 
-PianoAudioBackend get pianoAudioBackend => Platform.isAndroid
-    ? PianoAudioBackend.nativeAndroid
-    : PianoAudioBackend.dartPcm;
+PianoAudioBackend get pianoAudioBackend {
+  if (Platform.isAndroid) {
+    return PianoAudioBackend.nativeAndroid;
+  }
+  if (Platform.isIOS) {
+    return PianoAudioBackend.iosAudioUnit;
+  }
+  return PianoAudioBackend.dartPcm;
+}
 
 String get pianoAudioBackendLabel => labelForBackend(pianoAudioBackend);
 
@@ -15,7 +21,7 @@ Future<void> pianoInit(int sampleRate) async {
     ffi.pianoInit(sampleRate);
     return;
   }
-  await pcm.pcmPianoInit(sampleRate);
+  await pcm.pcmPianoInit(sampleRate, preferIosPlayback: Platform.isIOS);
 }
 
 void pianoStart() {

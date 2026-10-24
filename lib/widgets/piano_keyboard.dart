@@ -5,16 +5,21 @@ class PianoKeyboard extends StatelessWidget {
   final Set<int> activeMidis;
   final void Function(int) onKeyDown;
   final void Function(int) onKeyUp;
+  final double maxWidth;
+  final double maxHeight;
 
   static const int firstMidi = 60; // C4
-  static const int numKeys = 21;   // 1.75 octavas (12*1.75)
-  static List<int> get midiRange => List.generate(numKeys, (i) => firstMidi + i);
+  static const int numKeys = 21; // 1.75 octavas (12*1.75)
+  static List<int> get midiRange =>
+      List.generate(numKeys, (i) => firstMidi + i);
 
-  PianoKeyboard({
+  const PianoKeyboard({
     super.key,
     required this.activeMidis,
     required this.onKeyDown,
     required this.onKeyUp,
+    required this.maxWidth,
+    required this.maxHeight,
   });
 
   bool isWhite(int midi) => [0, 2, 4, 5, 7, 9, 11].contains((midi % 12));
@@ -30,26 +35,31 @@ class PianoKeyboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Para 1.75 octavas, mostramos 21 teclas.
     final whites = midiRange.where(isWhite).toList();
     final blacks = midiRange.where((m) => !isWhite(m)).toList();
 
     final totalWhiteKeys = whites.length;
-    final whiteKeyWidth = MediaQuery.of(context).size.width / 8; // 1.75 octavas ~ 8 blancas visibles
-    final blackKeyWidth = whiteKeyWidth * 0.6;
-    final whiteKeyHeight = MediaQuery.of(context).size.height * 0.28;
-    final blackKeyHeight = whiteKeyHeight * 0.6;
+    final whiteKeyHeight =
+        (maxHeight * 0.92).clamp(120.0, 280.0);
+    final whiteKeyWidth = (maxWidth / 10).clamp(44.0, 72.0);
+    final blackKeyWidth = whiteKeyWidth * 0.58;
+    final blackKeyHeight = whiteKeyHeight * 0.58;
+    final keyboardWidth = whiteKeyWidth * totalWhiteKeys;
 
     return SizedBox(
+      width: maxWidth,
       height: whiteKeyHeight,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.paddingOf(context).left > 0 ? 4 : 0,
+        ),
         child: SizedBox(
-          width: whiteKeyWidth * totalWhiteKeys,
+          width: keyboardWidth,
           height: whiteKeyHeight,
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              // White keys
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: whites.map((midi) {
@@ -67,11 +77,9 @@ class PianoKeyboard extends StatelessWidget {
                   );
                 }).toList(),
               ),
-              // Black keys
               ...blacks.map((midi) {
-                // Ubica la tecla negra entre las blancas
                 final pos = whites.indexWhere((w) => w > midi);
-                if (pos == 0 || pos == -1) return const SizedBox.shrink();
+                if (pos <= 0) return const SizedBox.shrink();
                 return Positioned(
                   left: (pos * whiteKeyWidth) - (blackKeyWidth / 2),
                   top: 0,
