@@ -48,6 +48,9 @@ void pcmPianoNoteOff(int midi) {
 
 void _onFeed(int remainingFrames) {
   final buffer = PcmArrayInt16.zeros(count: _feedSize);
-  _synth.fillPcm(buffer);
+  for (var i = 0; i < buffer.count; i++) {
+    final s = _synth.nextSampleFloat().clamp(-1.0, 1.0);
+    buffer[i] = (s * 32767).round();
+  }
   unawaited(FlutterPcmSound.feed(buffer));
 }

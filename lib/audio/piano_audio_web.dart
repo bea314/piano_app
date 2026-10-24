@@ -1,57 +1,61 @@
-import 'dart:math' as math;
+import 'dart:js_interop';
 
 import 'package:web/web.dart';
 
 import 'piano_audio_common.dart';
+import 'piano_synthesis.dart';
+
+const _scriptBufferSize = 4096;
 
 AudioContext? _ctx;
-final Map<int, OscillatorNode> _oscillators = {};
+ScriptProcessorNode? _processor;
+final PianoSynthesis _synth = PianoSynthesis();
 
 PianoAudioBackend get pianoAudioBackend => PianoAudioBackend.webAudio;
 
 String get pianoAudioBackendLabel => labelForBackend(pianoAudioBackend);
 
 Future<void> pianoInit(int sampleRate) async {
+  _synth.sampleRate = sampleRate;
+  _synth.t = 0;
+  _synth.activeNotes.clear();
   _ctx = AudioContext();
-  // sampleRate del contexto lo elige el navegador; la fórmula MIDI sigue igual.
 }
 
 void pianoStart() {
-  _ctx?.resume();
+  final ctx = _ctx;
+  if (ctx == null) return;
+
+  _processor?.disconnect();
+  _processor = ctx.createScriptProcessor(_scriptBufferSize, 0, 1);
+  _processor!.onaudioprocess = ((Event event) {
+    final output =
+        (event as AudioProcessingEvent).outputBuffer.getChannelData(0).toDart;
+    for (var i = 0; i < output.length; i++) {
+      output[i] = _synth.nextSampleFloat().clamp(-1.0, 1.0);
+    }
+  }).toJS;
+  _processor!.connect(ctx.destination);
+  ctx.resume();
 }
 
 void pianoStop() {
-  for (final osc in _oscillators.values) {
-    osc.stop();
-  }
-  _oscillators.clear();
+  _synth.activeNotes.clear();
+  _processor?.disconnect();
+  _processor = null;
   _ctx?.close();
   _ctx = null;
 }
 
+void _ensureRunning() {
+  _ctx?.resume();
+}
+
 void pianoNoteOn(int midi) {
-  final ctx = _ctx;
-  if (ctx == null || _oscillators.containsKey(midi)) return;
-
-  ctx.resume();
-
-  final osc = ctx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value =
-      440.0 * math.pow(2, (midi - 69) / 12.0).toDouble();
-
-  final gain = ctx.createGain();
-  gain.gain.value = 0.15;
-
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-
-  _oscillators[midi] = osc;
+  _ensureRunning();
+  _synth.activeNotes.add(midi);
 }
 
 void pianoNoteOff(int midi) {
-  final osc = _oscillators.remove(midi);
-  if (osc == null) return;
-  osc.stop();
+  _synth.activeNotes.remove(midi);
 }
