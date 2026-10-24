@@ -1,10 +1,14 @@
 import 'dart:math' as math;
 
-import 'package:flutter_pcm_sound/flutter_pcm_sound.dart';
+/// Per-note sine amplitude — matches [piano_engine.cpp] and prior web gain.
+const double kPianoNoteAmplitude = 0.15;
 
-/// Misma lógica que [piano_engine.cpp]: senos sumados por nota activa.
+/// Default output sample rate for all backends.
+const int kPianoSampleRate = 44100;
+
+/// Same logic as native Android [piano_engine.cpp]: summed sines per active note.
 class PianoSynthesis {
-  int sampleRate = 44100;
+  int sampleRate = kPianoSampleRate;
   double t = 0;
   final Set<int> activeNotes = {};
 
@@ -15,7 +19,8 @@ class PianoSynthesis {
     var sample = 0.0;
     for (final midi in activeNotes) {
       final freq = midiToHz(midi);
-      sample += 0.15 * math.sin(2 * math.pi * freq * t / sampleRate);
+      sample +=
+          kPianoNoteAmplitude * math.sin(2 * math.pi * freq * t / sampleRate);
     }
     if (activeNotes.isNotEmpty) {
       t += 1;
@@ -23,10 +28,10 @@ class PianoSynthesis {
     return sample;
   }
 
-  void fillPcm(PcmArrayInt16 buffer) {
-    for (var i = 0; i < buffer.count; i++) {
-      final s = nextSampleFloat().clamp(-1.0, 1.0);
-      buffer[i] = (s * 32767).round();
+  void fillFloat32(List<double> output, {int offset = 0, int? length}) {
+    final end = offset + (length ?? output.length - offset);
+    for (var i = offset; i < end; i++) {
+      output[i] = nextSampleFloat().clamp(-1.0, 1.0);
     }
   }
 }
