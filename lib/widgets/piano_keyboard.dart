@@ -51,6 +51,7 @@ class PianoKeyboard extends StatelessWidget {
       height: whiteKeyHeight,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.symmetric(
           horizontal: MediaQuery.paddingOf(context).left > 0 ? 4 : 0,
         ),
