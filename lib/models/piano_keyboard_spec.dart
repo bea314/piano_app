@@ -2,28 +2,63 @@
 class PianoKeyboardSpec {
   PianoKeyboardSpec._();
 
-  static const int firstMidi = 60; // C4
-  static const int numKeys = 21; // 1.75 octaves
+  static const int baseFirstMidi = 60; // C4
+  static const int numKeys = 24; // two octaves (C4–B5)
+  static const int minOctaveOffset = -2;
+  static const int maxOctaveOffset = 3;
 
-  static List<int> get midiRange =>
-      List.generate(numKeys, (i) => firstMidi + i);
+  static int firstMidiFor(int octaveOffset) =>
+      baseFirstMidi + octaveOffset.clamp(minOctaveOffset, maxOctaveOffset) * 12;
+
+  static List<int> midiRangeFor(int octaveOffset) {
+    final first = firstMidiFor(octaveOffset);
+    return List.generate(numKeys, (i) => first + i);
+  }
 
   static bool isWhiteKey(int midi) =>
       const [0, 2, 4, 5, 7, 9, 11].contains(midi % 12);
 
-  static String midiLabel(int midi) {
+  /// Short label for white keys (e.g. `C4`).
+  static String whiteKeyLabel(int midi) {
+    const names = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    final whiteIndex = [0, 2, 4, 5, 7, 9, 11].indexOf(midi % 12);
+    final octave = (midi ~/ 12) - 1;
+    return '${names[whiteIndex]}$octave';
+  }
+
+  /// Optional sharp name for black keys (e.g. `C#`).
+  static String? blackKeyLabel(int midi) {
+    const names = [
+      null,
+      'C#',
+      null,
+      'D#',
+      null,
+      null,
+      'F#',
+      null,
+      'G#',
+      null,
+      'A#',
+      null,
+    ];
+    return names[midi % 12];
+  }
+
+  /// Compact name for any key (e.g. `F#4`).
+  static String noteName(int midi) {
     const names = [
       'C',
-      'C#\nDb',
+      'C#',
       'D',
-      'D#\nEb',
+      'D#',
       'E',
       'F',
-      'F#\nGb',
+      'F#',
       'G',
-      'G#\nAb',
+      'G#',
       'A',
-      'A#\nBb',
+      'A#',
       'B',
     ];
     final octave = (midi ~/ 12) - 1;

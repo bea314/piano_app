@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'audio/piano_audio.dart';
 import 'audio/piano_synthesis.dart';
 import 'platform/piano_platform.dart';
+import 'theme/piano_theme.dart';
 import 'widgets/piano_screen.dart';
 
 Future<void> main() async {
@@ -31,9 +32,11 @@ class _PianoAppState extends State<PianoApp> {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Piano by EU DE',
-      home: PianoScreen(),
+      theme: PianoTheme.dark,
+      debugShowCheckedModeBanner: false,
+      home: const PianoScreen(),
     );
   }
 }
