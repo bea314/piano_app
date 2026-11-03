@@ -13,7 +13,7 @@ static SLPlayItf playerPlay = nullptr;
 static SLAndroidSimpleBufferQueueItf bufferQueue = nullptr;
 
 static int sampleRate = 44100;
-static const int bufSize = 1024;
+static const int bufSize = 256;
 static std::vector<short> audioBuffer1(bufSize);
 static std::vector<short> audioBuffer2(bufSize);
 static std::vector<short>* currentBuffer = &audioBuffer1;

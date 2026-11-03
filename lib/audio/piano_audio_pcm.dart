@@ -4,8 +4,9 @@ import 'package:flutter_pcm_sound/flutter_pcm_sound.dart';
 
 import 'piano_synthesis.dart';
 
-const _feedThreshold = 8000;
-const _feedSize = 4096;
+/// Smaller buffers → lower touch-to-sound latency (watch for underruns on device).
+const _feedThreshold = 2048;
+const _feedSize = 1024;
 
 final PianoSynthesis _synth = PianoSynthesis();
 
@@ -15,7 +16,7 @@ Future<void> pcmPianoInit(
 }) async {
   _synth.sampleRate = sampleRate;
   _synth.t = 0;
-  _synth.activeNotes.clear();
+  _synth.allNotesOff();
   await FlutterPcmSound.setLogLevel(LogLevel.error);
   await FlutterPcmSound.setup(
     sampleRate: sampleRate,
@@ -34,16 +35,20 @@ void pcmPianoStart() {
 }
 
 void pcmPianoStop() {
-  _synth.activeNotes.clear();
+  _synth.allNotesOff();
   unawaited(FlutterPcmSound.release());
 }
 
 void pcmPianoNoteOn(int midi) {
-  _synth.activeNotes.add(midi);
+  _synth.noteOn(midi);
 }
 
 void pcmPianoNoteOff(int midi) {
-  _synth.activeNotes.remove(midi);
+  _synth.noteOff(midi);
+}
+
+void pcmPianoAllNotesOff() {
+  _synth.allNotesOff();
 }
 
 void _onFeed(int remainingFrames) {

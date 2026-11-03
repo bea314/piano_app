@@ -42,6 +42,8 @@ void pianoStop() {
   pcm.pcmPianoStop();
 }
 
+Future<void> pianoEnsureAudioUnlocked() async {}
+
 void pianoNoteOn(int midi) {
   if (Platform.isAndroid) {
     ffi.pianoNoteOn(midi);
@@ -56,4 +58,12 @@ void pianoNoteOff(int midi) {
     return;
   }
   pcm.pcmPianoNoteOff(midi);
+}
+
+void pianoAllNotesOff() {
+  if (Platform.isAndroid) {
+    ffi.pianoAllNotesOff();
+    return;
+  }
+  pcm.pcmPianoAllNotesOff();
 }

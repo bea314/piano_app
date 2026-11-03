@@ -10,6 +10,8 @@ class PianoKeyboard extends StatelessWidget {
   final void Function(int) onKeyUp;
   final double maxWidth;
   final double maxHeight;
+  final int octaveOffset;
+  final bool showLabels;
 
   const PianoKeyboard({
     super.key,
@@ -18,77 +20,94 @@ class PianoKeyboard extends StatelessWidget {
     required this.onKeyUp,
     required this.maxWidth,
     required this.maxHeight,
+    required this.octaveOffset,
+    required this.showLabels,
   });
 
   @override
   Widget build(BuildContext context) {
-    final midiRange = PianoKeyboardSpec.midiRange;
+    final midiRange = PianoKeyboardSpec.midiRangeFor(octaveOffset);
     final whites = midiRange.where(PianoKeyboardSpec.isWhiteKey).toList();
-    final blacks = midiRange.where((m) => !PianoKeyboardSpec.isWhiteKey(m)).toList();
+    final blacks =
+        midiRange.where((m) => !PianoKeyboardSpec.isWhiteKey(m)).toList();
 
     final totalWhiteKeys = whites.length;
+    final scroll = PianoKeyboardLayout.shouldScrollHorizontally(
+      maxWidth,
+      totalWhiteKeys,
+    );
     final whiteKeyHeight = PianoKeyboardLayout.whiteKeyHeight(maxHeight);
-    final whiteKeyWidth = PianoKeyboardLayout.whiteKeyWidth(maxWidth);
+    final whiteKeyWidth = scroll
+        ? PianoKeyboardLayout.whiteKeyWidthScroll(totalWhiteKeys)
+        : PianoKeyboardLayout.whiteKeyWidthFill(maxWidth, totalWhiteKeys);
     final blackKeyWidth = whiteKeyWidth * PianoKeyboardLayout.blackKeyWidthRatio;
     final blackKeyHeight =
         whiteKeyHeight * PianoKeyboardLayout.blackKeyHeightRatio;
     final keyboardWidth = whiteKeyWidth * totalWhiteKeys;
 
-    final edgeInset = MediaQuery.paddingOf(context).left +
-        MediaQuery.paddingOf(context).right;
+    Widget keyboard = SizedBox(
+      width: keyboardWidth,
+      height: whiteKeyHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: whites.map((midi) {
+              final label = showLabels
+                  ? PianoKeyboardSpec.whiteKeyLabel(midi)
+                  : null;
+              return SizedBox(
+                width: whiteKeyWidth,
+                height: whiteKeyHeight,
+                child: PianoKey(
+                  isBlack: false,
+                  active: activeMidis.contains(midi),
+                  label: label,
+                  onDown: () => onKeyDown(midi),
+                  onUp: () => onKeyUp(midi),
+                ),
+              );
+            }).toList(),
+          ),
+          ...blacks.map((midi) {
+            final pos = whites.indexWhere((w) => w > midi);
+            if (pos <= 0) return const SizedBox.shrink();
+            final label = showLabels
+                ? PianoKeyboardSpec.blackKeyLabel(midi)
+                : null;
+            return Positioned(
+              left: (pos * whiteKeyWidth) - (blackKeyWidth / 2),
+              top: 0,
+              width: blackKeyWidth,
+              height: blackKeyHeight,
+              child: PianoKey(
+                isBlack: true,
+                active: activeMidis.contains(midi),
+                label: label,
+                onDown: () => onKeyDown(midi),
+                onUp: () => onKeyUp(midi),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+
+    if (scroll) {
+      keyboard = SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: keyboard,
+      );
+    }
 
     return SizedBox(
       width: maxWidth,
       height: whiteKeyHeight,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: edgeInset > 0 ? 4 : 0),
-        child: SizedBox(
-          width: keyboardWidth,
-          height: whiteKeyHeight,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: whites.map((midi) {
-                  return SizedBox(
-                    width: whiteKeyWidth,
-                    height: whiteKeyHeight,
-                    child: PianoKey(
-                      isBlack: false,
-                      active: activeMidis.contains(midi),
-                      label: PianoKeyboardSpec.midiLabel(midi),
-                      color: Colors.blue,
-                      onDown: () => onKeyDown(midi),
-                      onUp: () => onKeyUp(midi),
-                    ),
-                  );
-                }).toList(),
-              ),
-              ...blacks.map((midi) {
-                final pos = whites.indexWhere((w) => w > midi);
-                if (pos <= 0) return const SizedBox.shrink();
-                return Positioned(
-                  left: (pos * whiteKeyWidth) - (blackKeyWidth / 2),
-                  top: 0,
-                  width: blackKeyWidth,
-                  height: blackKeyHeight,
-                  child: PianoKey(
-                    isBlack: true,
-                    active: activeMidis.contains(midi),
-                    label: PianoKeyboardSpec.midiLabel(midi),
-                    color: Colors.indigo,
-                    onDown: () => onKeyDown(midi),
-                    onUp: () => onKeyUp(midi),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-      ),
+      child: scroll
+          ? keyboard
+          : Center(child: keyboard),
     );
   }
 }
